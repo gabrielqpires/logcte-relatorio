@@ -33,11 +33,10 @@ async function preencherData(page, seletor, valor) {
     throw new Error('Defina LOGCTE_EMAIL e LOGCTE_SENHA (env ou .env)');
   }
 
-  const hoje = new Date();
-  const dataInicial = new Date(hoje);
-  dataInicial.setDate(hoje.getDate() - 3);
-  const dataFinal = new Date(hoje);
-  dataFinal.setDate(hoje.getDate() + 1);
+  // TEMPORÁRIO: range fixo pra uma run avulsa. Reverter para a regra
+  // dinâmica (hoje-3 / hoje+1) logo em seguida.
+  const dataInicial = new Date(2026, 6, 1);
+  const dataFinal = new Date(2026, 6, 11);
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
