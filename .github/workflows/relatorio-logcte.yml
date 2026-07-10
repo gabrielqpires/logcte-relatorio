@@ -1,0 +1,52 @@
+name: Relatorio LogCTE
+
+on:
+  schedule:
+    # 08:17 horário de Brasília (11:17 UTC). Minuto quebrado pra fugir da fila do topo da hora.
+    - cron: '17 11 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  gerar-relatorio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install --no-save playwright dotenv
+      - run: npx playwright install --with-deps chromium
+
+      - name: Executar RPA
+        env:
+          LOGCTE_EMAIL: ${{ secrets.LOGCTE_EMAIL }}
+          LOGCTE_SENHA: ${{ secrets.LOGCTE_SENHA }}
+        run: node gerar-relatorio.js
+
+      - name: Enviar relatório para o webhook do n8n
+        env:
+          WEBHOOK_N8N: ${{ secrets.WEBHOOK_N8N }}
+        run: |
+          ARQUIVO=$(find output -maxdepth 1 -type f | head -n 1)
+          if [ -z "$ARQUIVO" ]; then
+            echo "Nenhum arquivo foi gerado pelo RPA."
+            exit 1
+          fi
+          curl --fail-with-body \
+            --retry 3 --retry-delay 5 \
+            --connect-timeout 30 --max-time 120 \
+            -X POST "$WEBHOOK_N8N" \
+            -F "file=@${ARQUIVO}" \
+            -F "data_execucao=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+      - name: Guardar cópia como artefato
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-${{ github.run_number }}
+          path: output/
+          retention-days: 7
+          if-no-files-found: warn

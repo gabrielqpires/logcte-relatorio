@@ -1,0 +1,13 @@
+{
+  "name": "logcte-rpa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RPA Playwright para extrair filtros de relatório no LOG CT-e",
+  "scripts": {
+    "rpa": "node rpa.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.47.0"
+  }
+}
