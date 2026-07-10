@@ -6,6 +6,9 @@ on:
     - cron: '17 11 * * *'
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   gerar-relatorio:
     runs-on: ubuntu-latest
@@ -50,3 +53,16 @@ jobs:
           path: output/
           retention-days: 7
           if-no-files-found: warn
+
+      # sem isso o GitHub desativa o cron sozinho depois de 60 dias sem commit
+      # no repo (rodar o workflow não conta como "atividade" pra ele)
+      - name: Registrar execução (mantém o cron ativo)
+        if: always()
+        run: |
+          mkdir -p .status
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') - job: ${{ job.status }}" >> .status/ultima-execucao.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .status/ultima-execucao.txt
+          git diff --cached --quiet || git commit -m "chore: registra execução $(date -u +'%Y-%m-%d')"
+          git push
