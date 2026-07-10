@@ -21,7 +21,12 @@ jobs:
           node-version: '20'
 
       - run: npm install --no-save playwright dotenv
-      - run: npx playwright install --with-deps chromium
+      # sem --with-deps: o runner ubuntu-latest já tem todas as libs que o
+      # Chromium precisa pra rodar headless; --with-deps só baixava fontes
+      # extras (emoji, CJK) que não fazem falta pra automação e deixavam o
+      # passo lento e variável (apt-get puxando pacote em vez de já estar lá)
+      - run: npx playwright install chromium
+        timeout-minutes: 3
 
       - name: Executar RPA
         env:
