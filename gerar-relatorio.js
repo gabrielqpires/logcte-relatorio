@@ -28,11 +28,7 @@ async function preencherData(page, seletor, valor) {
   await page.waitForTimeout(150);
 }
 
-(async () => {
-  if (!EMAIL || !SENHA) {
-    throw new Error('Defina LOGCTE_EMAIL e LOGCTE_SENHA (env ou .env)');
-  }
-
+async function tentativa() {
   const hoje = new Date();
   const dataInicial = new Date(hoje);
   dataInicial.setDate(hoje.getDate() - 3);
@@ -73,7 +69,7 @@ async function preencherData(page, seletor, valor) {
 
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 60000 }),
-      page.click('#btnRelatorioCTe'),
+      page.click('#btnRelatorioCTe', { timeout: 45000 }),
     ]);
 
     const destino = path.join(OUTPUT_DIR, download.suggestedFilename());
@@ -81,5 +77,25 @@ async function preencherData(page, seletor, valor) {
     console.log(`Relatório salvo em: ${destino}`);
   } finally {
     await browser.close();
+  }
+}
+
+(async () => {
+  if (!EMAIL || !SENHA) {
+    throw new Error('Defina LOGCTE_EMAIL e LOGCTE_SENHA (env ou .env)');
+  }
+
+  // instabilidades pontuais do site (ex: botão demorar a ficar clicável)
+  // não devem derrubar a execução do dia inteiro - tenta de novo do zero
+  const TENTATIVAS = 3;
+  for (let i = 1; i <= TENTATIVAS; i++) {
+    try {
+      await tentativa();
+      return;
+    } catch (err) {
+      console.error(`Tentativa ${i}/${TENTATIVAS} falhou: ${err.message}`);
+      if (i === TENTATIVAS) throw err;
+      await new Promise((r) => setTimeout(r, 5000));
+    }
   }
 })();
