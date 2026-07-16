@@ -66,9 +66,13 @@ async function tentativa() {
     console.log('Gerando relatório e aguardando download...');
     if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
+    // ranges grandes (várias semanas) fazem o servidor demorar bem mais pra
+    // gerar o Excel - o próprio click() do Playwright espera a resposta virar
+    // download antes de resolver, então o timeout do click precisa cobrir
+    // isso também, não só o waitForEvent('download')
     const [download] = await Promise.all([
-      page.waitForEvent('download', { timeout: 60000 }),
-      page.click('#btnRelatorioCTe', { timeout: 45000 }),
+      page.waitForEvent('download', { timeout: 120000 }),
+      page.click('#btnRelatorioCTe', { timeout: 120000 }),
     ]);
 
     const destino = path.join(OUTPUT_DIR, download.suggestedFilename());
