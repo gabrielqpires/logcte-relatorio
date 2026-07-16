@@ -74,6 +74,14 @@ async function tentativa() {
     const destino = path.join(OUTPUT_DIR, download.suggestedFilename());
     await download.saveAs(destino);
     console.log(`Relatório salvo em: ${destino}`);
+  } catch (err) {
+    // guarda um print da tela no momento da falha (vira artefato do run)
+    // pra dar pra ver o que travou o clique, em vez de só o timeout puro
+    if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+    const printPath = path.join(OUTPUT_DIR, `erro-${Date.now()}.png`);
+    await page.screenshot({ path: printPath, fullPage: true }).catch(() => {});
+    console.log(`Print de erro salvo em: ${printPath}`);
+    throw err;
   } finally {
     await browser.close();
   }
